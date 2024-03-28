@@ -162,6 +162,7 @@ function declarerEtatCase(uint8 _x, uint8 _y, CoordinateStatus _status) external
         }
     }
 
+    // C'est cette fonction qui liste qu'il faut utiliser, je ne sais pas pk les autres sont présentes et j'arrive pas à les retirer sans casser quelque chose...
     function listeAttaques(address _joueur) external view onlyPlayers returns (Coordonnees[] memory) {
         return historiqueAttaque[_joueur]; // Renvoie l'historique des attaques d'un joueur
     }
