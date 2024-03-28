@@ -77,6 +77,11 @@ struct AttaqueTemporaire {
         _;
     }
 
+    modifier isNotCurrentPlayer(address player) {
+    require(player != AQuiLeTour, "Seul le qui est joueur attaque peut definir le status de la case ciblee.");
+    _;
+}
+
     function inviterJoueur(address _invite) external gameNotStarted {
         require(msg.sender == hote, "Seul le proprietaire peut inviter un joueur."); // Vérifie si l'appelant est le joueur hôte
         invite = _invite; // Invite le joueur avec l'adresse spécifiée
@@ -113,7 +118,7 @@ function attack(uint8 _x, uint8 _y) external onlyPlayers gameStartedOnly gameNot
 }
 
 
-function declarerEtatCase(uint8 _x, uint8 _y, CoordinateStatus _status) external onlyPlayers gameStartedOnly gameNotOver isCurrentPlayer(msg.sender) {
+function declarerEtatCase(uint8 _x, uint8 _y, CoordinateStatus _status) external onlyPlayers gameStartedOnly gameNotOver isNotCurrentPlayer(msg.sender) {
     require(attaquesTemporaires[AQuiLeTour].x != 0 && attaquesTemporaires[AQuiLeTour].y != 0, "Le joueur a qui c'est le tour n'a pas encore attaque.");
 
     // Accéder aux coordonnées de l'attaque depuis le stockage temporaire
@@ -123,17 +128,22 @@ function declarerEtatCase(uint8 _x, uint8 _y, CoordinateStatus _status) external
     // Vérifier que les coordonnées fournies correspondent à l'attaque précédente
     require(_x == xAttaque && _y == yAttaque, "Les coordonnees de la case ne correspondent pas a l'attaque precedente.");
     
+    // Vérifier que le joueur attaqué est celui qui appelle la fonction
+    require(msg.sender == invite || msg.sender == hote, "Vous n'etes pas autorise a declarer l'etat de cette case.");
+
     // Enregistrement de l'état de la case dans l'historique des attaques du joueur attaqué
-    historiqueAttaque[msg.sender].push(Coordonnees(_x, _y, _status));
+    historiqueAttaque[AQuiLeTour].push(Coordonnees(xAttaque, yAttaque, _status));
 
     // Vérifie si la partie est terminée après l'attaque
     checkGameOver();
 
-    // Passe au tour du joueur suivant
-    AQuiLeTour = msg.sender;
+    // Change de joueur
+    if (AQuiLeTour == hote) {
+        AQuiLeTour = invite;
+    } else {
+        AQuiLeTour = hote;
+    }
 }
-
-
     function checkGameOver() internal {
         uint8 nbCoules = 0; // Nombre de navires coulés
         uint8 nbTouches = 0; // Nombre d'attaques réussies
